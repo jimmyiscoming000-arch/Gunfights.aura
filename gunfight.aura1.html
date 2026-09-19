@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gunfight.aura</title>
+
+<style>
+* {
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #071018;
+  color: white;
+  font-family: Arial, sans-serif;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  border: 1px solid #4e7890;
+  background: #142b39;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin: 5px;
+}
+
+button:active {
+  background: #28536b;
+}
+
+input,
+select {
+  padding: 10px;
+  border-radius: 7px;
+  border: 1px solid #557788;
+  background: #0c1d28;
+  color: white;
+  margin: 5px;
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(#071018ee, #102b38ee);
+  text-align: center;
+  padding: 20px;
+}
+
+.screen h1 {
+  font-size: 42px;
+  margin: 5px;
+  color: #7ee7ff;
+  text-shadow: 0 0 15px #1b94bb;
+}
+
+.screen h2 {
+  color: #bdefff;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.menuBox {
+  width: min(94vw, 520px);
+  padding: 20px;
+  border: 1px solid #315b6d;
+  border-radius: 15px;
+  background: #0b1b25dd;
+}
+
+.menuBox label {
+  display: block;
+  margin-top: 12px;
+  color: #b9dce8;
+}
+
+#hud {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 5;
+  background: #071018bb;
+  padding: 10px;
+  border-radius: 8px;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+#message {
+  position: absolute;
+  top: 100px;
+  width: 100%;
+  text-align: center;
+  z-index: 6;
+  font-weight: bold;
+  color: #ffe28a;
+}
+
+#crosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 4;
+  font-size: 26px;
+  color: white;
+  pointer-events: none;
+}
+
+#damageText {
+  position: absolute;
+  left: 50%;
+  top: 43%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  font-size: 25px;
+  color: #ffdf70;
+  font-weight: bold;
+  pointer-events: none;
+}
+
+#mobileControls {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+}
+
+#joystick {
+  position: absolute;
+  left: 25px;
+  bottom: 30px;
+  width: 125px;
+  height: 125px;
+  border: 2px solid #a8d9e9aa;
+  border-radius: 50%;
+  background: #102b3899;
+  pointer-events: auto;
+}
+
+#stick {
+  position: absolute;
+  left: 37px;
+  top: 37px;
+  width: 47px;
+  height: 47px;
+  border-radius: 50%;
+  background: #83dfff;
+}
+
+.touchButton {
+  position: absolute;
+  right: 25px;
+  width: 90px;
+  height: 55px;
+  background: #143444dd;
+  border: 1px solid #82dfff;
+  pointer-events: auto;
+}
+
+#tagButton {
+  bottom: 35px;
+}
+
+#reloadButton {
+  bottom: 100px;
+}
+
+#lookArea {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 58%;
+  height: 100%;
+  pointer-events: auto;
+}
+
+#settingsButton {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  z-index: 7;
+}
+
+#settingsPanel {
+  position: absolute;
+  right: 10px;
+  top: 60px;
+  z-index: 15;
+  width: min(90vw, 320px);
+  padding: 15px;
+  border-radius: 12px;
+  background: #081923f2;
+  border: 1px solid #4b788b;
+}
+
+#roomStatus {
+  color: #9eeaff;
+  margin-top: 10px;
+  font-size: 14px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="mainMenu" class="screen">
+  <div class="menuBox">
+    <h1>Gunfight.aura</h1>
+    <p>3D maze arena</p>
+
+    <label>Choose a map</label>
+    <select id="mapChoice">
+      <option value="0">Neon Maze</option>
+      <option value="1">Factory Maze</option>
+      <option value="2">Temple Maze</option>
+    </select>
+
+    <label>Choose controls</label>
+    <select id="controlChoice">
+      <option value="mobile">Mobile</option>
+      <option value="keyboard">Keyboard and Mouse</option>
+    </select>
+
+    <button id="startButton">Start Game</button>
+
+    <hr>
+
+    <h2>Private Server</h2>
+    <p>Use the same room code with friends.</p>
+    <input id="roomCodeInput" maxlength="8" placeholder="Room code">
+    <br>
+    <button id="privateButton">Join Private Room</button>
+    <div id="roomStatus"></div>
+
+    <button id="settingsMenuButton">Settings</button>
+  </div>
+</div>
+
+<div id="settingsPanel" class="hidden">
+  <h3>Settings</h3>
+
+  <label>Look sensitivity</label>
+  <input id="sensitivityInput" type="range" min="10" max="100" value="50">
+
+  <label>Move forward key</label>
+  <input id="forwardKey" value="w" maxlength="1">
+
+  <label>Move backward key</label>
+  <input id="backKey" value="s" maxlength="1">
+
+  <label>Move left key</label>
+  <input id="leftKey" value="a" maxlength="1">
+
+  <label>Move right key</label>
+  <input id="rightKey" value="d" maxlength="1">
+
+  <label>Tag action key</label>
+  <input id="tagKey" value="f" maxlength="1">
+
+  <label>Reload action key</label>
+  <input id="reloadKey" value="r" maxlength="1">
+
+  <br>
+  <button id="closeSettingsButton">Close</button>
+</div>
+
+<div id="hud" class="hidden">
+  Health: <span id="healthValue">100</span><br>
+  Energy: <span id="ammoValue">30</span><br>
+  Map: <span id="mapValue">Neon Maze</span><br>
+  Room: <span id="roomValue">Offline</span>
+</div>
+
+<button id="settingsButton" class="hidden">Settings</button>
+<div id="crosshair" class="hidden">+</div>
+<div id="damageText"></div>
+<div id="message"></div>
+
+<div id="mobileControls" class="hidden">
+  <div id="joystick">
+    <div id="stick"></div>
+  </div>
+
+  <div id="lookArea"></div>
+
+  <button id="tagButton" class="touchButton">TAG</button>
+  <button id="reloadButton" class="touchButton">RELOAD</button>
+</div>
+
+<div id="deathScreen" class="screen hidden">
+  <div class="menuBox">
+    <h1>Game Over</h1>
+    <button id="respawnButton">Respawn</button>
+    <button id="menuButton">Main Menu</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<script>
+let scene;
+let camera;
+let renderer;
+let clock;
+
+let player;
+let playerVelocity = new THREE.Vector3();
+
+let obstacles = [];
+let doors = [];
+let boosters = [];
+let enemies = [];
+let energyEffects = [];
+
+let health = 100;
+let energy = 30;
+let dead = false;
+let gameStarted = false;
+
+let selectedMap = 0;
+let controlMode = "mobile";
+let roomCode = "Offline";
+
+let sensitivity = 50;
+
+let keys = {};
+let mouseDown = false;
+
+let moveX = 0;
+let moveZ = 0;
+
+let joystickActive = false;
+let joystickId = null;
+
+let lookActive = false;
+let lookId = null;
+let lastLookX = 0;
+
+let lastTagTime = 0;
+let lastEnemyAttack = 0;
+
+let keybinds = {
+  forward: "w",
+  back: "s",
+  left: "a",
+  right: "d",
+  tag: "f",
+  reload: "r"
+};
+
+const mapNames = [
+  "Neon Maze",
+  "Factory Maze",
+  "Temple Maze"
+];
+
+const healthValue = document.getElementById("healthValue");
+const ammoValue = document.getElementById("ammoValue");
+const mapValue = document.getElementById("mapValue");
+const roomValue = document.getElementById("roomValue");
+const damageText = document.getElementById("damageText");
+const message = document.getElementById("message");
+
+function showMessage(text, time = 1500) {
+  message.textContent = text;
+
+  setTimeout(() => {
+    if (message.textContent === text) {
+      message.textContent = "";
+    }
+  }, time);
+}
+
+function updateHUD() {
+  healthValue.textContent = Math.max(0, Math.round(health));
+  ammoValue.textContent = energy;
+  mapValue.textContent = mapNames[selectedMap];
+  roomValue.textContent = roomCode;
+}
+
+function clearWorld() {
+  obstacles.forEach(object => scene.remove(object));
+  doors.forEach(object => scene.remove(object));
+  boosters.forEach(object => scene.remove(object));
+  enemies.forEach(object => scene.remove(object));
+  energyEffects.forEach(object => scene.remove(object));
+
+  obstacles = [];
+  doors = [];
+  boosters = [];
+  enemies = [];
+  energyEffects = [];
+}
+
+function createBox(x, y, z, w, h, d, color = 0x40515a) {
+  const geometry = new THREE.BoxGeometry(w, h, d);
+  const material = new THREE.MeshStandardMaterial({
+    color: color,
+    roughness: 0.8
+  });
+
+  const object = new THREE.Mesh(geometry, material);
+  object.position.set(x, y, z);
+  scene.add(object);
+  obstacles.push(object);
+
+  return object;
+}
+
+function createRoof(size = 80) {
+  const geometry = new THREE.BoxGeometry(size, 1, size);
+  const material = new THREE.MeshStandardMaterial({
+    color: 0x182c35,
+    roughness: 1
+  });
+
+  const roof = new THREE.Mesh(geometry, material);
+  roof.position.y = 9;
+  scene.add(roof);
+}
+
+function createDoor(x, z, rotation = 0) {
+  const geometry = new THREE.BoxGeometry(3, 4, 0.35);
+  const material = new THREE.MeshStandardMaterial({
+    color: 0x76552e,
+    metalness: 0.2
+  });
+
+  const door = new THREE.Mesh(geometry, material);
+  door.position.set(x, 2, z);
+  door.rotation.y = rotation;
+  scene.add(door);
+  doors.push(door);
+}
+
+function createBooster(x, z) {
+  const geometry = new THREE.CylinderGeometry(0.6, 0.6, 0.25, 16);
+  const material = new THREE.MeshStandardMaterial({
+    color: 0x45ff8a,
+    emissive: 0x0b8c43,
+    emissiveIntensity: 1
+  });
+
+  const booster = new THREE.Mesh(geometry, material);
+  booster.position.set(x, 0.2, z);
+  scene.add(booster);
+  boosters.push(booster);
+}
+
+function createEnemy(x, z) {
+  const group = new THREE.Group();
+
+  const bodyMaterial = new THREE.MeshStandardMaterial({
+    color: 0xc43d4c
+  });
+
+  const body = new THREE.Mesh(
+    new THREE.BoxGeometry(1, 1.5, 0.65),
+    bodyMaterial
+  );
+
+  body.position.y = 1.1;
+  group.add(body);
+
+  const head = new THREE.Mesh(
+    new THREE.SphereGeometry(0.4, 12, 12),
+    bodyMaterial
+  );
+
+  head.position.y = 2.15;
+  group.add(head);
+
+  group.position.set(x, 0, z);
+  group.userData.health = 100;
+  group.userData.flashUntil = 0;
+
+  scene.add(group);
+  enemies.push(group);
+}
+
+function buildMap(mapIndex) {
+  clearWorld();
+
+  createRoof(80);
+
+  createBox(0, -0.5, 0, 80, 1, 80, 0x253b42);
+
+  createBox(0, 4, -40, 80, 8, 1);
+  createBox(0, 4, 40, 80, 8, 1);
+  createBox(-40, 4, 0, 1, 8, 80);
+  createBox(40, 4, 0, 1, 8, 80);
+
+  if (mapIndex === 0) {
+    createBox(-20, 2, -20, 30, 4, 2);
+    createBox(15, 2, -20, 25, 4, 2);
+    createBox(-20, 2, 0, 2, 4, 35);
+    createBox(20, 2, 5, 2, 4, 30);
+    createBox(-10, 2, 20, 25, 4, 2);
+    createBox(15, 2, 28, 25, 4, 2);
+
+    createDoor(-5, -20);
+    createDoor(20, -8, Math.PI / 2);
+
+    createBooster(-30, -30);
+    createBooster(28, 25);
+
+    createEnemy(25, -28);
+    createEnemy(-28, 28);
+  }
+
+  if (mapIndex === 1) {
+    createBox(-25, 2, -10, 2, 4, 45);
+    createBox(0, 2, 10, 35, 4, 2);
+    createBox(25, 2, -10, 2, 4, 45);
+    createBox(-10, 2, -28, 30, 4, 2);
+    createBox(10, 2, 28, 30, 4, 2);
+
+    createDoor(-25, 12, Math.PI / 2);
+    createDoor(25, -12, Math.PI / 2);
+
+    createBooster(-32, 25);
+    createBooster(32, -25);
+
+    createEnemy(-32, -25);
+    createEnemy(32, 25);
+  }
+
+  if (mapIndex === 2) {
+    createBox(0, 2, -25, 45, 4, 2);
+    createBox(0, 2, 25, 45, 4, 2);
+    createBox(-25, 2, 0, 2, 4, 45);
+    createBox(25, 2, 0, 2, 4, 45);
+
+    createBox(-12, 2, 0, 2, 4, 25);
+    createBox(12, 2, 0, 2, 4, 25);
+    createBox(0, 2, -12, 25, 4, 2);
+    createBox(0, 2, 12, 25, 4, 2);
+
+    createDoor(-12, -5, Math.PI / 2);
+    createDoor(12, 5, Math.PI / 2);
+
+    createBooster(-18, -18);
+    createBooster(18, 18);
+
+    createEnemy(-18, 18);
+    createEnemy(18, -18);
+  }
+}
+
+function setupLighting() {
+  const ambient = new THREE.AmbientLight(0xa9dfff, 1.5);
+  scene.add(ambient);
+
+  const mainLight = new THREE.DirectionalLight(0xffffff, 2);
+  mainLight.position.set(10, 20, 10);
+  scene.add(mainLight);
+
+  const lights = [
+    [-25, -25],
+    [25, -25],
+    [-25, 25],
+    [25, 25],
+    [0, 0]
+  ];
+
+  lights.forEach(position => {
+    const light = new THREE.PointLight(0x8ddfff, 5, 25);
+    light.position.set(position[0], 7, position[1]);
+    scene.add(light);
+  });
+}
+
+function setupScene() {
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x071018);
+  scene.fog = new THREE.Fog(0x071018, 35, 100);
+
+  camera = new THREE.PerspectiveCamera(
+    75,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    200
+  );
+
+  camera.position.set(0, 2, 30);
+  camera.rotation.order = "YXZ";
+
+  renderer = new THREE.WebGLRenderer({
+    antialias: true
+  });
+
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  document.body.appendChild(renderer.domElement);
+
+  clock = new THREE.Clock();
+
+  setupLighting();
+  buildMap(selectedMap);
+
+  window.addEventListener("resize", () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+}
+
+function resetPlayer() {
+  health = 100;
+  energy = 30;
+  dead = false;
+
+  camera.position.set(0, 2, 30);
+  camera.rotation.set(0, 0, 0);
+
+  updateHUD();
+}
+
+function startGame() {
+  selectedMap = Number(document.getElementById("mapChoice").value);
+  controlMode = document.getElementById("controlChoice").value;
+
+  document.getElementById("mainMenu").classList.add("hidden");
+  document.getElementById("deathScreen").classList.add("hidden");
+  document.getElementById("hud").classList.remove("hidden");
+  document.getElementById("crosshair").classList.remove("hidden");
+  document.getElementById("settingsButton").classList.remove("hidden");
+
+  if (controlMode === "mobile") {
+    document.getElementById("mobileControls").classList.remove("hidden");
+  } else {
+    document.getElementById("mobileControls").classList.add("hidden");
+  }
+
+  if (!scene) {
+    setupScene();
+  } else {
+    buildMap(selectedMap);
+  }
+
+  resetPlayer();
+  gameStarted = true;
+  showMessage("Map loaded: " + mapNames[selectedMap]);
+}
+
+function endGame() {
+  dead = true;
+  document.getElementById("deathScreen").classList.remove("hidden");
+}
+
+function damagePlayer(amount) {
+  if (dead) return;
+
+  health -= amount;
+  updateHUD();
+
+  if (health <= 0) {
+    endGame();
+  }
+}
+
+function showDamage(amount) {
+  damageText.textContent = "-" + amount;
+
+  setTimeout(() => {
+    damageText.textContent = "";
+  }, 500);
+}
+
+function createEnergyEffect(start, end) {
+  const direction = new THREE.Vector3().subVectors(end, start);
+  const distance = direction.length();
+
+  const geometry = new THREE.CylinderGeometry(
+    0.045,
+    0.045,
+    distance,
+    8
+  );
+
+  const material = new THREE.MeshBasicMaterial({
+    color: 0x7ee7ff
+  });
+
+  const effect = new THREE.Mesh(geometry, material);
+  effect.position.copy(start).add(end).multiplyScalar(0.5);
+  effect.quaternion.setFromUnitVectors(
+    new THREE.Vector3(0, 1, 0),
+    direction.normalize()
+  );
+
+  effect.userData.removeAt = performance.now() + 100;
+
+  scene.add(effect);
+  energyEffects.push(effect);
+}
+
+function tagTarget() {
+  if (dead || !gameStarted) return;
+
+  const now = performance.now();
+
+  if (now - lastTagTime < 250) {
+    return;
+  }
+
+  if (energy <= 0) {
+    showMessage("Recharge needed");
+    return;
+  }
+
+  lastTagTime = now;
+  energy--;
+
+  const start = camera.position.clone();
+
+  const direction = new THREE.Vector3(0, 0, -1);
+  direction.applyQuaternion(camera.quaternion);
+
+  const raycaster = new THREE.Raycaster(
+    start,
+    direction.normalize(),
+    0,
+    45
+  );
+
+  const targets = [];
+
+  enemies.forEach(enemy => {
+    enemy.children.forEach(part => targets.push(part));
+  });
+
+  const hits = raycaster.intersectObjects(targets, false);
+
+  if (hits.length > 0) {
+    const hitObject = hits[0].object;
+    const enemy = hitObject.parent;
+
+    if (enemy && enemy.userData.health !== undefined) {
+      enemy.userData.health -= 25;
+      enemy.userData.flashUntil = performance.now() + 180;
+
+      showDamage(25);
+      createEnergyEffect(start, hits[0].point);
+
+      if (enemy.userData.health <= 0) {
+        enemy.position.set(
+          (Math.random() - 0.5) * 55,
+          0,
+          (Math.random() - 0.5) * 55
+        );
+        enemy.userData.health = 100;
+        showMessage("Target reset");
+      }
+    }
+  } else {
+    const end = start.clone().add(direction.multiplyScalar(12));
+    createEnergyEffect(start, end);
+  }
+
+  updateHUD();
+}
+
+function reloadEnergy() {
+  if (dead) return;
+
+  energy = 30;
+  updateHUD();
+  showMessage("Energy recharged");
+}
+
+function updateEnemies(delta) {
+  const now = performance.now();
+
+  enemies.forEach(enemy => {
+    const distance = enemy.position.distanceTo(camera.position);
+
+    if (distance < 22) {
+      const direction = new THREE.Vector3()
+        .subVectors(camera.position, enemy.position)
+        .normalize();
+
+      enemy.position.x += direction.x * delta * 1.2;
+      enemy.position.z += direction.z * delta * 1.2;
+
+      if (now - lastEnemyAttack > 1800 && distance < 3) {
+        damagePlayer(10);
+        lastEnemyAttack = now;
+      }
+    }
+
+    enemy.children.forEach(part => {
+      if (now < enemy.userData.flashUntil) {
+        part.material.color.set(0xffffff);
+      } else {
+        part.material.color.set(0xc43d4c);
+      }
+    });
+  });
+}
+
+function updateBoosters() {
+  boosters.forEach(booster => {
+    const distance = booster.position.distanceTo(camera.position);
+
+    if (distance < 1.5 && booster.visible) {
+      health = Math.min(100, health + 50);
+      booster.visible = false;
+      updateHUD();
+      showMessage("+50 health");
+
+      setTimeout(() => {
+        booster.visible = true;
+      }, 10000);
+    }
+
+    if (booster.visible) {
+      booster.rotation.y += 0.03;
+    }
+  });
+}
+
+function collisionBlocked(position) {
+  const playerBox = new THREE.Box3().setFromCenterAndSize(
+    new THREE.Vector3(position.x, 2, position.z),
+    new THREE.Vector3(1, 3, 1)
+  );
+
+  for (const obstacle of obstacles) {
+    const obstacleBox = new THREE.Box3().setFromObject(obstacle);
+
+    if (playerBox.intersectsBox(obstacleBox)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function updateMovement(delta) {
+  if (dead) return;
+
+  let forward = 0;
+  let sideways = 0;
+
+  if (controlMode === "keyboard") {
+    if (keys[keybinds.forward]) forward += 1;
+    if (keys[keybinds.back]) forward -= 1;
+    if (keys[keybinds.left]) sideways -= 1;
+    if (keys[keybinds.right]) sideways += 1;
+  } else {
+    forward = -moveZ;
+    sideways = moveX;
+  }
+
+  const speed = 6 * delta;
+
+  const direction = new THREE.Vector3(
+    sideways,
+    0,
+    -forward
+  );
+
+  direction.applyAxisAngle(
+    new THREE.Vector3(0, 1, 0),
+    camera.rotation.y
+  );
+
+  const nextPosition = camera.position.clone().add(
+    direction.multiplyScalar(speed)
+  );
+
+  if (!collisionBlocked(nextPosition)) {
+    camera.position.x = nextPosition.x;
+    camera.position.z = nextPosition.z;
+  }
+
+  camera.position.y = 2;
+}
+
+function updateEnergyEffects() {
+  const now = performance.now();
+
+  for (let i = energyEffects.length - 1; i >= 0; i--) {
+    const effect = energyEffects[i];
+
+    if (now > effect.userData.removeAt) {
+      scene.remove(effect);
+      energyEffects.splice(i, 1);
+    }
+  }
+}
+
+function gameLoop() {
+  requestAnimationFrame(gameLoop);
+
+  if (!renderer || !scene || !camera) return;
+
+  const delta = Math.min(clock.getDelta(), 0.05);
+
+  if (gameStarted && !dead) {
+    updateMovement(delta);
+    updateEnemies(delta);
+    updateBoosters();
+    updateEnergyEffects();
+  }
+
+  renderer.render(scene, camera);
+}
+
+document.addEventListener("keydown", event => {
+  keys[event.key.toLowerCase()] = true;
+
+  if (controlMode === "keyboard") {
+    if (event.key.toLowerCase() === keybinds.tag) {
+      tagTarget();
+    }
+
+    if (event.key.toLowerCase() === keybinds.reload) {
+      reloadEnergy();
+    }
+  }
+});
+
+document.addEventListener("keyup", event => {
+  keys[event.key.toLowerCase()] = false;
+});
+
+document.addEventListener("mousedown", event => {
+  if (controlMode !== "keyboard") return;
+
+  if (event.button === 0) {
+    mouseDown = true;
+    tagTarget();
+  }
+});
+
+document.addEventListener("mouseup", event => {
+  if (event.button === 0) {
+    mouseDown = false;
+  }
+});
+
+document.addEventListener("mousemove", event => {
+  if (controlMode !== "keyboard" || !mouseDown || dead) return;
+
+  const speed = sensitivity * 0.00008;
+  camera.rotation.y -= event.movementX * speed;
+});
+
+const joystick = document.getElementById("joystick");
+const stick = document.getElementById("stick");
+
+joystick.addEventListener("touchstart", event => {
+  event.preventDefault();
+
+  const touch = event.changedTouches[0];
+  joystickActive = true;
+  joystickId = touch.identifier;
+}, { passive: false });
+
+joystick.addEventListener("touchmove", event => {
+  event.preventDefault();
+
+  if (!joystickActive) return;
+
+  for (const touch of event.changedTouches) {
+    if (touch.identifier !== joystickId) continue;
+
+    const rect = joystick.getBoundingClientRect();
+
+    let x = touch.clientX - (rect.left + rect.width / 2);
+    let y = touch.clientY - (rect.top + rect.height / 2);
+
+    const length = Math.sqrt(x * x + y * y);
+    const maxLength = 42;
+
+    if (length > maxLength) {
+      x = x / length * maxLength;
+      y = y / length * maxLength;
+    }
+
+    stick.style.transform =
+      "translate(" + x + "px, " + y + "px)";
+
+    moveX = x / maxLength;
+    moveZ = y / maxLength;
+  }
+}, { passive: false });
+
+joystick.addEventListener("touchend", event => {
+  joystickActive = false;
+  joystickId = null;
+  moveX = 0;
+  moveZ = 0;
+  stick.style.transform = "translate(0, 0)";
+});
+
+const lookArea = document.getElementById("lookArea");
+
+lookArea.addEventListener("touchstart", event => {
+  event.preventDefault();
+
+  const touch = event.changedTouches[0];
+  lookActive = true;
+  lookId = touch.identifier;
+  lastLookX = touch.clientX;
+}, { passive: false });
+
+lookArea.addEventListener("touchmove", event => {
+  event.preventDefault();
+
+  if (!lookActive || dead) return;
+
+  for (const touch of event.changedTouches) {
+    if (touch.identifier !== lookId) continue;
+
+    const dx = touch.clientX - lastLookX;
+    const speed = sensitivity * 0.00012;
+
+    camera.rotation.y -= dx * speed;
+    camera.rotation.x = 0;
+    camera.rotation.z = 0;
+
+    lastLookX = touch.clientX;
+  }
+}, { passive: false });
+
+lookArea.addEventListener("touchend", event => {
+  for (const touch of event.changedTouches) {
+    if (touch.identifier === lookId) {
+      lookActive = false;
+      lookId = null;
+    }
+  }
+});
+
+document.getElementById("tagButton").addEventListener("touchstart", event => {
+  event.preventDefault();
+  tagTarget();
+}, { passive: false });
+
+document.getElementById("reloadButton").addEventListener("touchstart", event => {
+  event.preventDefault();
+  reloadEnergy();
+}, { passive: false });
+
+document.getElementById("startButton").addEventListener("click", startGame);
+
+document.getElementById("respawnButton").addEventListener("click", () => {
+  document.getElementById("deathScreen").classList.add("hidden");
+  resetPlayer();
+});
+
+document.getElementById("menuButton").addEventListener("click", () => {
+  document.getElementById("deathScreen").classList.add("hidden");
+  document.getElementById("hud").classList.add("hidden");
+  document.getElementById("crosshair").classList.add("hidden");
+  document.getElementById("settingsButton").classList.add("hidden");
+  document.getElementById("mobileControls").classList.add("hidden");
+  document.getElementById("mainMenu").classList.remove("hidden");
+  gameStarted = false;
+});
+
+document.getElementById("settingsButton").addEventListener("click", () => {
+  document.getElementById("settingsPanel").classList.toggle("hidden");
+});
+
+document.getElementById("settingsMenuButton").addEventListener("click", () => {
+  document.getElementById("settingsPanel").classList.toggle("hidden");
+});
+
+document.getElementById("closeSettingsButton").addEventListener("click", () => {
+  document.getElementById("settingsPanel").classList.add("hidden");
+});
+
+document.getElementById("sensitivityInput").addEventListener("input", event => {
+  sensitivity = Number(event.target.value);
+});
+
+document.getElementById("forwardKey").addEventListener("input", event => {
+  keybinds.forward = event.target.value.toLowerCase();
+});
+
+document.getElementById("backKey").addEventListener("input", event => {
+  keybinds.back = event.target.value.toLowerCase();
+});
+
+document.getElementById("leftKey").addEventListener("input", event => {
+  keybinds.left = event.target.value.toLowerCase();
+});
+
+document.getElementById("rightKey").addEventListener("input", event => {
+  keybinds.right = event.target.value.toLowerCase();
+});
+
+document.getElementById("tagKey").addEventListener("input", event => {
+  keybinds.tag = event.target.value.toLowerCase();
+});
+
+document.getElementById("reloadKey").addEventListener("input", event => {
+  keybinds.reload = event.target.value.toLowerCase();
+});
+
+document.getElementById("privateButton").addEventListener("click", () => {
+  const enteredCode = document
+    .getElementById("roomCodeInput")
+    .value
+    .trim()
+    .toUpperCase();
+
+  if (enteredCode.length < 3) {
+    document.getElementById("roomStatus").textContent =
+      "Enter a room code with at least 3 characters.";
+    return;
+  }
+
+  roomCode = enteredCode;
+  document.getElementById("roomStatus").textContent =
+    "Room selected: " + roomCode;
+
+  showMessage("Private room: " + roomCode);
+});
+
+gameLoop();
+</script>
+
+</body>
+</html>
